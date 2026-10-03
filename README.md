@@ -1,5 +1,7 @@
 # UNNC Pocket Map · 宁诺口袋地图
 
+**简体中文** | [English](README.en.md)
+
 一个独立开发的 **原生微信小程序二维校园地图**，使用宁波诺丁汉大学地点资料，探索校园建筑及楼栋周边服务。
 
 **当前版本：`0.1.0-beta.1`。非学校官方产品，仍在测试。**
@@ -78,11 +80,3 @@ docs/                    素材、定位与发布指南
 欢迎提交问题或改进，请阅读 [贡献指南](CONTRIBUTING.md)。地点资料更正请附来源与日期；不要在 issue 或 PR 中公开私人配置、定位原始采样或未经确认可分发的图片。
 
 代码与原创文档、示例网格采用 [MIT License](LICENSE)。地图资料及第三方名称的来源和权利边界见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。公开前检查见 [发布检查表](docs/RELEASE.md)，版本变化见 [CHANGELOG.md](CHANGELOG.md)。
-
-## English
-
-UNNC Pocket Map is an independent, native WeChat Mini Program for browsing campus places and building services. It includes bilingual search, local favorites, collision-aware markers, expandable service menus and smooth map interactions.
-
-This beta ships with an original **placeholder grid, not the university map artwork**. Supply an appropriately licensed and aligned map to recreate the campus view. Location support is prepared but disabled pending real calibration, WeChat permissions and field testing. Run `npm test` with Node.js 22+, or serve the repository using `python3 -m http.server 8765` and open `/preview/`.
-
-Not affiliated with or endorsed by the University of Nottingham Ningbo China. See the license and third-party notices for the scope of permitted reuse.
