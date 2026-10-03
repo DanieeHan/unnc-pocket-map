@@ -1,0 +1,88 @@
+# UNNC Pocket Map · 宁诺口袋地图
+
+一个独立开发的 **原生微信小程序二维校园地图**，使用宁波诺丁汉大学地点资料，探索校园建筑及楼栋周边服务。
+
+**当前版本：`0.1.0-beta.1`。非学校官方产品，仍在测试。**
+
+2026-10-02：本地发布整理、自动测试及浏览器预览验证已完成；GitHub 发布与微信真机验收尚未完成。
+
+> 本开源包附带的是原创示例网格，**不是实际校园底图**。代码和交互可直接体验；还原校园地图需要自行导入有权使用、坐标匹配的底图。真实定位尚未校准，默认关闭。
+
+![首页交互预览，示例网格并非校园地图](docs/images/preview-home.png)
+
+## 已实现
+
+- 66 个地点记录：48 个建筑、场地及服务点，18 个商业街照片补充服务。
+- 分类筛选，中文、英文、简称及楼号搜索，地点介绍、复制和微信分享。
+- 本机收藏，无账号登录、云数据库或后端服务。
+- 标点与名称按屏幕空间避让；宿舍采用简短楼号，带服务数量的楼栋可展开列表。
+- 点击地点居中，拖动与双指缩放，约 260ms 平滑定位/缩放过渡；手动拖动可打断动画。
+- 点击地图空白处关闭地点预览或服务列表，保留当前视角。
+- 单次定位的接口、蓝点与精度圈、采集及校准工具已准备，等待真实数据与现场验收。
+
+## 快速开始
+
+### 微信开发者工具
+
+1. 导入本仓库根目录（包含 `project.config.json`），小程序目录为 `miniprogram/`。
+2. 配置默认是 `touristappid`，可尝试工具支持的测试方式；手机预览、上传和定位权限需使用你自己的有效 AppID。不要把个人配置提交到仓库。
+3. 编译 `pages/map/index`。不需要安装 npm 依赖或执行 npm 构建。
+4. 首次运行显示示例网格。参考 [底图导入指南](docs/ASSETS.md) 替换底图，参考 [定位准备指南](docs/LOCATION.md) 配置定位。
+
+### 浏览器预览
+
+需要 Python 3，在根目录运行：
+
+```sh
+python3 -m http.server 8765
+```
+
+打开 <http://localhost:8765/preview/>。支持鼠标拖动、滚轮缩放与触摸操作。预览读取实际 WXML/WXSS 并运行同一份页面逻辑，但不是微信运行环境；授权、分享、真机触摸和渲染需要在微信中验证。浏览器不采集真实位置。
+
+### 自动测试
+
+需要 Node.js 22 或以上，无需 `npm install`：
+
+```sh
+npm test
+```
+
+覆盖搜索与数据、收藏、缩放边界、居中、手势误触、菜单、动画中断、空白关闭、坐标拟合、定位失败及回调失效、采集保存、发布包检查，以及微信 JS 模块加载与校准配置一致性。定位测试采用合成数据，**不能替代现场校准**。
+
+## 数据与功能边界
+
+- 建筑名称和编号参考校方 2025-10-16 版地图；图书馆主页使用简称，介绍中保留正式全称。
+- 总览有 41 个候选地图标记，实际显示数量取决于缩放、分类及碰撞避让；被隐藏的地点仍可搜索。
+- x/y 是参考底图上的百分比，不是 GPS 坐标。商业街店铺采用所属楼栋或区域锚点，不代表入口。
+- 不提供步行路线、室内楼层导航、营业状态、后台位置跟踪或到达时间。
+- 收藏只保存在当前设备，浏览器与微信之间不互通。
+- 定位需要后台接口权限、隐私配置、同一坐标系的真实校准点及真机验证；当前配置保持关闭。
+
+## 项目结构
+
+```text
+miniprogram/
+  pages/map/             地图、列表、详情及收藏
+  pages/calibrate/       校内采集工具（公开版未注册入口）
+  data/                  地点与待校准配置
+  utils/location.js      坐标转换和范围判断
+  assets/                原创示例网格 SVG / PNG
+preview/                 浏览器交互预览
+scripts/                 离线校准、示例底图生成
+tests/                   自动验证
+docs/                    素材、定位与发布指南
+```
+
+## 参与与许可
+
+欢迎提交问题或改进，请阅读 [贡献指南](CONTRIBUTING.md)。地点资料更正请附来源与日期；不要在 issue 或 PR 中公开私人配置、定位原始采样或未经确认可分发的图片。
+
+代码与原创文档、示例网格采用 [MIT License](LICENSE)。地图资料及第三方名称的来源和权利边界见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。公开前检查见 [发布检查表](docs/RELEASE.md)，版本变化见 [CHANGELOG.md](CHANGELOG.md)。
+
+## English
+
+UNNC Pocket Map is an independent, native WeChat Mini Program for browsing campus places and building services. It includes bilingual search, local favorites, collision-aware markers, expandable service menus and smooth map interactions.
+
+This beta ships with an original **placeholder grid, not the university map artwork**. Supply an appropriately licensed and aligned map to recreate the campus view. Location support is prepared but disabled pending real calibration, WeChat permissions and field testing. Run `npm test` with Node.js 22+, or serve the repository using `python3 -m http.server 8765` and open `/preview/`.
+
+Not affiliated with or endorsed by the University of Nottingham Ningbo China. See the license and third-party notices for the scope of permitted reuse.

@@ -1,0 +1,42 @@
+const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
+const root=path.resolve(__dirname,'..');
+const {calibrate}=require('../scripts/calibrate-location.cjs');
+const location=require('../miniprogram/utils/location');
+// Synthetic geometry only: these are NOT UNNC coordinates and never ship as calibration.
+const points=[[0,0],[100,0],[200,100],[200,200],[100,250],[0,200],[50,50],[80,120],[140,160]].map(([x,y],i)=>({name:'synthetic-'+i,role:i<6?'control':'check',longitude:120+x/100000,latitude:30+y/100000,x:100+x,y:400-y,accuracy:5}));
+const input={coordinateSystem:'gcj02',mapWidth:600,mapHeight:579,points};
+const c=calibrate(input);assert.equal(c.enabled,false);c.enabled=true;assert.equal(location.ready(c),true);
+assert.ok(c.validation.maxErrorMeters<1e-6);
+const result=location.locate(points[7],c);assert.equal(result.status,'located');assert.ok(Math.abs(result.x*6-180)<1e-6);
+assert.equal(location.locate({...points[7],accuracy:100},c).status,'inaccurate');
+assert.equal(location.locate({...points[7],longitude:121},c).status,'outside');
+assert.equal(location.locate(points[7],{...c,enabled:false}).status,'uncalibrated');
+assert.throws(()=>calibrate({...input,points:points.slice(0,6)}));
+assert.throws(()=>calibrate({...input,points:points.map((p,i)=>i===8?{...p,x:p.x+100}:p)}));
+assert.throws(()=>calibrate({...input,points:points.map(p=>({...p,latitude:30}))}));
+let page,success,requests=0,notices=[],timerId=0;const timers=new Map();
+const wx={getWindowInfo:()=>({windowWidth:390,windowHeight:844,statusBarHeight:24}),getStorageSync:()=>[],showShareMenu(){},showToast:p=>notices.push(p.title),requirePrivacyAuthorize:({success})=>success(),getLocation:o=>{requests++;success=o.success;},createSelectorQuery(){let cb;return {in(){return this},select(){return this},boundingClientRect(f){cb=f;return this},exec(){cb({left:0,top:180,width:390,height:460});}}}};
+vm.runInNewContext(fs.readFileSync(root+'/miniprogram/pages/map/index.js','utf8'),{require:id=>id.includes('location-calibration')?c:require(path.resolve(root,'miniprogram/pages/map',id)),Page:p=>page=p,wx,setTimeout:fn=>{const id=++timerId;timers.set(id,fn);return id;},clearTimeout:id=>timers.delete(id)});
+page.setData=(p,cb)=>{Object.assign(page.data,p);if(cb)cb();};page.onLoad({});
+c.enabled=false;page.locateMe();assert.equal(requests,0);c.enabled=true;
+page.locateMe();page.locateMe();assert.equal(requests,1);success(points[7]);assert.ok(page.data.userLocation);assert.equal(page.data.userLocationScreen.x,195);
+page.locateMe();const late=success;page.onHide();late(points[7]);assert.equal(page.data.userLocation,null);assert.equal(page.data.locating,false);
+page.locateMe();success({...points[7],accuracy:100});assert.equal(page.data.userLocation,null);assert.match(page.data.locationMessage,/精度/);
+page.locateMe();success({...points[7],longitude:121});assert.match(page.data.locationMessage,/范围/);
+page.locateMe();const timeout=[...timers.values()][0];timeout();success(points[7]);assert.equal(page.data.userLocation,null);assert.equal(page.data.locating,false);
+page.locateMe();++page.cameraTicket;const beforeX=page.data.mapX;success(points[7]);assert.equal(page.data.mapX,beforeX);assert.ok(page.data.userLocation);
+page.onUnload();assert.equal(timers.size,0);
+console.log('PASS: affine fit, independent validation, disabled gate, bounds/accuracy checks, request deduplication, timeout, late callbacks, gesture priority, lifecycle cleanup');
+
+// Collection page: explicit save only, fresh fixes, local export, no late writes.
+let collector,stored=[],copied='';
+const collectorWx={...wx,getStorageSync:()=>[],setStorageSync:(key,rows)=>{stored=rows;},setClipboardData:({data})=>{copied=data;}};
+vm.runInNewContext(fs.readFileSync(root+'/miniprogram/pages/calibrate/index.js','utf8'),{Page:p=>collector=p,wx:collectorWx,setTimeout:fn=>{const id=++timerId;timers.set(id,fn);return id;},clearTimeout:id=>timers.delete(id)});
+collector.setData=p=>Object.assign(collector.data,p);collector.onLoad();
+collector.capture();success(points[7]);assert.equal(stored.length,0);
+collector.setData({name:'test bridge',point:{x:180,y:280}});collector.save();assert.equal(stored.length,1);assert.equal(collector.data.fix,null);
+collector.exportSamples();assert.equal(JSON.parse(copied).coordinateSystem,'gcj02');assert.equal(JSON.parse(copied).points.length,1);
+collector.capture();const oldFix=success;collector.onHide();oldFix(points[7]);assert.equal(collector.data.fix,null);
+collector.capture();success({...points[7],accuracy:60});assert.equal(collector.data.fix,null);
+collector.remove({currentTarget:{dataset:{index:0}}});assert.equal(stored.length,0);collector.onUnload();
+console.log('PASS: collector explicit local save/export, poor accuracy rejection, background cancellation');

@@ -1,0 +1,16 @@
+.DS_Store
+Thumbs.db
+node_modules/
+coverage/
+project.private.config.json
+*.private.json
+.env
+.env.*
+!.env.example
+*.log
+*.zip
+references/
+private-assets/
+location-candidate*.json
+location-samples*.json
+

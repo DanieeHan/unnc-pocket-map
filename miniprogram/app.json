@@ -1,0 +1,21 @@
+{
+  "pages": [
+    "pages/map/index"
+  ],
+  "window": {
+    "navigationStyle": "custom",
+    "backgroundColor": "#ffffff",
+    "backgroundTextStyle": "dark"
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents",
+  "permission": {
+    "scope.userLocation": {
+      "desc": "用于在校园地图上显示你本次所在的位置"
+    }
+  },
+  "requiredPrivateInfos": [
+    "getLocation"
+  ]
+}

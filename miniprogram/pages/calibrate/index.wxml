@@ -1,0 +1,13 @@
+<view class="collector">
+  <text class="title">校园定位校准</text>
+  <text class="intro">采集至少 6 个校准点与 3 个独立验证点。沿校园四周和中部均匀选点，站在可辨认的室外路口或桥头。数据仅保存在本机，点击导出才会复制到剪贴板。</text>
+  <input value="{{name}}" bindinput="nameChange" placeholder="参照点名称，如北侧桥头中心"/>
+  <radio-group bindchange="roleChange"><label><radio value="control" checked="{{role==='control'}}" color="#10263b"/>校准点</label><label><radio value="check" checked="{{role==='check'}}" color="#10263b"/>独立验证点</label></radio-group>
+  <view class="calibration-map" bindtap="pickPoint"><image src="/assets/campus.png" mode="scaleToFill"/><view wx:if="{{point}}" class="cross" style="left:{{point.x/600*100}}%;top:{{point.y/579*100}}%">＋</view></view>
+  <text class="message">{{message}}</text>
+  <text wx:if="{{fix}}" class="message">本次设备估计误差：{{fix.accuracy}} 米</text>
+  <button bindtap="capture" disabled="{{busy}}">{{busy?'正在采集…':'采集我现在的位置'}}</button>
+  <button bindtap="save">保存此参照点</button>
+  <view wx:for="{{rows}}" wx:key="index" class="row"><text>{{item.name}} · {{item.role==='control'?'校准':'验证'}} · {{item.accuracy}}m</text><button data-index="{{index}}" bindtap="remove">删除</button></view>
+  <button bindtap="exportSamples">导出 {{rows.length}} 个参照点</button>
+</view>

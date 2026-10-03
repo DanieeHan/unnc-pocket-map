@@ -1,0 +1,15 @@
+{
+  "name": "unnc-pocket-map",
+  "version": "0.1.0-beta.1",
+  "private": true,
+  "description": "An independent 2D UNNC campus map built as a native WeChat Mini Program",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "node tests/logic.cjs && node tests/motion.cjs && node tests/location.cjs && node tests/release.cjs && node tests/runtime.cjs && node tests/labels.cjs",
+    "placeholder": "node scripts/generate-placeholder.cjs",
+    "sync:calibration": "node scripts/sync-calibration.cjs"
+  }
+}

@@ -1,0 +1,44 @@
+<view class="app" style="height:{{windowHeight}}px;padding-top:{{statusTop}}px">
+  <view class="topline"><text class="wordmark">UNNC <text class="wordmark-light">宁波诺丁汉大学</text></text></view>
+  <view class="heading"><view><text class="eyebrow">UNIVERSITY OF NOTTINGHAM NINGBO CHINA</text><text class="title">校园地图</text></view><button class="help" bindtap="openGuide" aria-label="使用指南">?</button></view>
+  <view class="searchbox"><text class="search-icon">⌕</text><input placeholder="搜索地点、楼宇名称或编号" value="{{query}}" bindinput="onSearch" confirm-type="search" aria-label="搜索校园地点"/><button wx:if="{{query}}" class="clear" bindtap="clearSearch" aria-label="清空搜索">×</button><text wx:else class="search-end">探索</text></view>
+  <scroll-view class="categories" scroll-x enhanced show-scrollbar="{{false}}"><view class="category-inner"><button wx:for="{{categories}}" wx:key="id" class="chip {{category===item.id?'active':''}}" data-id="{{item.id}}" bindtap="chooseCategory"><text class="chip-symbol">{{item.symbol}}</text>{{item.name}}</button></view></scroll-view>
+  <view class="content">
+    <view wx:if="{{tab==='map' ? !searching : false}}" class="map-stage" bindtap="dismissMapPreview">
+      <view class="map-area" bindtouchstart="onMapTouchStart" catchtouchmove="onMapTouchMove" bindtouchend="onMapTouchEnd" bindtouchcancel="onMapTouchEnd">
+        <view class="map-sheet" style="width: {{mapWidth}}px; height: {{mapHeight}}px; transform: translate3d({{mapX}}px,{{mapY}}px,0) scale({{scale}}); transition: {{mapAnimate?'transform 240ms ease-out':'none'}}; position: absolute; left: 1rpx; top: 0rpx">
+          <image class="campus-art" src="/assets/campus.png" mode="scaleToFill" draggable="false"/>
+        </view>
+        <view class="user-location-layer">
+          <view wx:if="{{userLocationScreen}}" class="user-location" style="left:{{userLocationScreen.x}}px;top:{{userLocationScreen.y}}px"><view class="location-accuracy" style="width:{{userLocationScreen.radius*2}}px;height:{{userLocationScreen.radius*2}}px"></view><view class="location-dot"></view></view>
+        </view>
+        <view class="marker-layer">
+          <view wx:for="{{renderedPlaces}}" wx:key="id" class="place-marker marker-{{item.category}} {{selected ? (selected.id===item.id?'selected':'') : ''}}" style="left:{{item.screenX}}px;top:{{item.screenY}}px;width:{{item.pinSize}}px;height:{{item.pinSize}}px" data-id="{{item.id}}" catchtap="selectMapPlace"><view class="pin" style="width:{{item.pinSize}}px;min-width:{{item.pinSize}}px;height:{{item.pinSize}}px;font-size:{{item.pinSize>20?11:9}}px">{{item.markerText || item.code}}<text wx:if="{{item.serviceCount}}" class="service-badge">{{item.serviceCount}}</text></view><text wx:if="{{item.labelVisible}}" class="pin-label" style="width:{{item.labelWidth}}px;left:{{item.pinSize/2+item.labelOffset}}px;top:{{item.labelTop}}px">{{item.mapLabel}}</text></view>
+        </view>
+      </view>
+      <view class="map-popup-layer" catchtap="stop">
+        <view wx:if="{{cameraMoving ? false : (expandedBuildingId ? mapServicePopup : false)}}" class="map-service-popup" data-id="{{expandedBuildingId}}" style="left:{{mapServicePopup.left}}px;top:{{mapServicePopup.top}}px;width:{{mapServicePopup.width}}px;height:{{mapServicePopup.height}}px">
+          <view class="map-popup-header"><view><text class="map-popup-title">{{popupBuilding.code}} · 周边服务</text><text class="map-popup-sub">{{popupItems.length}} 个地点</text></view><button class="map-popup-close" bindtap="closeMapServices" aria-label="收起标点服务列表">×</button></view>
+          <scroll-view class="map-popup-list" scroll-y><button wx:for="{{popupItems}}" wx:key="id" class="map-popup-item" data-id="{{item.id}}" bindtap="selectPlace"><view><text>{{item.shortName || item.name}}</text><text class="map-popup-en">{{item.en}}</text></view><text>›</text></button></scroll-view>
+        </view>
+      </view>
+      <view class="map-stamp"><view class="live-dot"></view><text>示例底图 · 待导入</text><text class="stamp-light">PLACEHOLDER GRID</text></view>
+      <view class="compass"><text class="compass-n">N</text><text class="compass-arrow">↑</text></view>
+      <view class="map-tools" catchtap="stop"><button bindtap="zoomIn" aria-label="放大地图">＋</button><button bindtap="zoomOut" aria-label="缩小地图">−</button><button class="locate" bindtap="locateMe" disabled="{{locating}}" aria-label="定位我的位置">{{locating?'…':'⌖'}}</button><button class="reset" bindtap="resetMap" aria-label="重置地图">↺</button></view>
+      <view wx:if="{{locationMessage}}" class="location-status" catchtap="stop">{{locationMessage}}</view>
+      <view class="map-caption">点楼号展开服务 · 角标为服务数量 <text>示意位置</text></view>
+    </view>
+    <scroll-view wx:else class="list-panel" scroll-y>
+      <view class="list-title"><text>{{searching?'搜索结果':tab==='saved'?'我的收藏':'校园地点'}}</text><text class="count">{{results.length}} 个地点</text></view>
+      <view wx:if="{{results.length===0}}" class="empty"><text class="empty-icon">⌕</text><text class="empty-title">{{tab==='saved'?'暂无收藏地点':'还没有找到这个地方'}}</text><text class="empty-copy">{{tab==='saved'?'点击地图上的地点，再轻点收藏。':'试试中文名称、英文名称或楼宇简称。'}}</text><button class="secondary" data-id="map" bindtap="changeTab">回到地图探索</button></view>
+      <button wx:for="{{results}}" wx:key="id" class="place-row" data-id="{{item.id}}" bindtap="selectPlace"><view class="row-number color-{{item.category}}">{{item.code}}</view><view class="row-copy"><text class="row-name">{{item.name}}<text wx:if="{{item.locationHint}}" class="row-hint"> · {{item.locationHint}}</text></text><text class="row-en">{{item.en}}</text></view><text class="row-arrow">↗</text></button>
+      <view class="list-foot">点位参考校方 2025-10-16 版地图 · 底图为示例网格</view>
+    </scroll-view>
+  </view>
+  <view wx:if="{{tab==='map' ? !searching : false}}" class="bottom-card {{selected?'has-detail':''}}">
+    <view wx:if="{{selected}}" class="detail-card"><view class="detail-heading"><view><text class="eyebrow">EXPLORE UNNC / {{selected.code}}</text><text class="detail-title">{{selected.shortName || selected.name}}</text><text class="detail-en">{{selected.shortEn || selected.en}}</text></view><button class="close" bindtap="closeDetail" aria-label="关闭地点详情">×</button></view><view class="detail-actions"><button class="primary" bindtap="copyPlace">复制地点信息 <text>↗</text></button><button class="save {{isSaved?'saved':''}}" bindtap="toggleSaved">{{isSaved?'★ 已收藏':'☆ 收藏'}}</button><button class="info-button" bindtap="openGuide" aria-label="地点介绍">详情</button></view></view>
+    <view wx:else class="discovery-card"><view class="discovery-copy"><text class="eyebrow">CAMPUS EXPLORER</text><text class="discovery-title">探索宁波诺丁汉大学</text><text class="discovery-sub">{{results.length}} 个地点 · 搜索、查看与收藏</text></view><button class="discover-button" data-id="trent" bindtap="selectPlace" aria-label="探索钟楼">↗</button></view>
+  </view>
+  <view class="tabbar"><button class="tab {{tab==='map'?'current':''}}" data-id="map" bindtap="changeTab"><text class="tab-icon">◈</text><text>探索地图</text></button><button class="tab {{tab==='list'?'current':''}}" data-id="list" bindtap="changeTab"><text class="tab-icon">☷</text><text>地点列表</text></button><button class="tab {{tab==='saved'?'current':''}}" data-id="saved" bindtap="changeTab"><text class="tab-icon">☆</text><text>我的收藏<text wx:if="{{saved.length}}"> · {{saved.length}}</text></text></button></view>
+  <view wx:if="{{guide}}" class="scrim" bindtap="closeGuide"><view class="guide-sheet" catchtap="stop"><view class="sheet-handle"></view><view class="detail-heading"><text class="detail-title">{{selected?selected.name:'使用指南'}}</text><button class="close" bindtap="closeGuide" aria-label="关闭介绍">×</button></view><text class="guide-en">{{selected?selected.en:'WELCOME TO YOUR POCKET CAMPUS'}}</text><view wx:if="{{selected}}" class="tags"><text wx:for="{{selected.tags}}" wx:key="*this">{{item}}</text></view><text class="guide-intro">{{selected?selected.subtitle:'查找校园地点'}}</text><text class="guide-text">{{selected?selected.description:'拖动地图寻找地点，双指放大查看细节。也可以搜索中文、英文或 TB、PMB、DB 等简称。收藏保存在当前设备，无需登录。'}}</text><view wx:if="{{related.length}}" class="related"><text class="related-title">该楼及周边服务</text><button wx:for="{{related}}" wx:key="id" class="related-place" data-id="{{item.id}}" bindtap="selectPlace"><text class="related-code">{{item.code}}</text><text>{{item.name}}</text><text>›</text></button></view><view class="notice"><text class="notice-title">关于这张地图</text><text>独立开发，非学校官方产品。本开源包仅附示例网格底图，请导入有权使用且坐标匹配的校园地图。地点编号与图面锚点参考校方 2025 年 10 月 16 日版地图。点位不代表实际入口；未接入 GPS 或步行导航，建设区域以原图版本为准。</text></view><button class="primary full" bindtap="copyOfficial">复制官方地图页面链接 ↗</button><button class="address-button" bindtap="copyAddress">复制学校地址 · 泰康东路199号</button></view></view>
+</view>

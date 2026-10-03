@@ -1,0 +1,23 @@
+{
+  "sourcePage": "https://www.nottingham.edu.cn/en/estates/space-management/campus-map.aspx",
+  "pdf": "https://www.nottingham.edu.cn/en/estates/documents/20251016-campus-map.pdf",
+  "retrievedPdf": "https://www.nottingham.edu.cn/en/about/documents/campus-map/unnc-campus-map-20251016.pdf",
+  "edition": "2025-10-16",
+  "pdfPageSize": [
+    4436.22,
+    3018.9
+  ],
+  "crop": {
+    "x": 670,
+    "y": 430,
+    "width": 2550,
+    "height": 2460
+  },
+  "viewSize": [
+    600,
+    578.823529
+  ],
+  "orientation": "Same as official source. North points approximately upper-left.",
+  "note": "Simplified vector geometry and manually aligned PDF anchor points, not GPS coordinates. Construction areas represent source edition only.",
+  "bundledAsset": "Original neutral grid placeholder. Official-derived map artwork is not distributed."
+}
