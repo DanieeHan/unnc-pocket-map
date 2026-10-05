@@ -10,7 +10,9 @@ The October 5, 2026 beta includes map rendering optimizations, location referenc
 
 > This open-source package includes an original placeholder grid, **not the actual campus map artwork**. You can try the code and interactions immediately. To recreate the campus map, import artwork you have permission to use and align it with the place coordinates. Real location support has not been calibrated and is disabled by default.
 
-![Home screen interaction preview; the placeholder grid is not a campus map](docs/images/preview-home.png)
+![Campus map interaction preview from the development build](docs/images/preview-home.png)
+
+*The screenshot shows the development build with campus artwork for interface demonstration. The public code package uses an original placeholder grid and does not include that campus map asset.*
 
 ## Features
 

@@ -1,6 +1,6 @@
 # 底图导入
 
-本仓库的 `miniprogram/assets/campus.png` 和 `campus.svg` 是原创网格占位图，用于运行和检查交互，不反映校园地形。学校衍生地图、官方 PDF、商业街原照片及带这些素材的旧截图均未打包。
+本仓库的 `miniprogram/assets/campus.png` 和 `campus.svg` 是原创网格占位图，用于运行和检查交互，不反映校园地形。运行素材不附带学校衍生地图、官方 PDF 或商业街原照片。README 仅展示带校园底图的开发版截图。
 
 ## 使用自己的底图
 
@@ -23,4 +23,4 @@ npm run placeholder
 
 ## 截图
 
-`docs/images/preview-home.png` 是此次发布版本的浏览器截图，使用示例网格。截图不能证明微信真机表现，也不包含学校原始地图素材。
+`docs/images/preview-home.png` 是带校园底图的开发版浏览器截图，仅用于 README 界面演示，不代表公开包的默认底图，也不能证明微信真机表现。截图内第三方素材的权利范围见 [来源说明](../THIRD_PARTY_NOTICES.md)。
