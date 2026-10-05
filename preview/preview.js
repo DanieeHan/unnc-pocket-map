@@ -15,7 +15,10 @@
   const root=document.querySelector('#root');let page,renderQueued=false;let callbacks=[];
   function toast(title){document.querySelector('.toast')?.remove();const el=document.createElement('div');el.className='toast';el.textContent=title;document.body.append(el);setTimeout(()=>el.remove(),2200)}
   const wx={createSelectorQuery(){let selector,callback;return {in(){return this},select(s){selector=s;return this},boundingClientRect(cb){callback=cb;return this},exec(){const el=root.querySelector(selector);callback(el?el.getBoundingClientRect():null)}}},getWindowInfo:()=>({windowWidth:Math.min(innerWidth,430),windowHeight:innerWidth>=600?Math.min(innerHeight-85,900):innerHeight,statusBarHeight:32}),getStorageSync:k=>JSON.parse(localStorage.getItem(k)||'[]'),setStorageSync:(k,v)=>localStorage.setItem(k,JSON.stringify(v)),showShareMenu(){},showToast:({title})=>toast(title),setClipboardData:async({data})=>{try{await navigator.clipboard.writeText(data);toast('已复制')}catch(e){toast('复制失败，请允许剪贴板权限')}}};
-  const evaluate=(expr,scope)=>{try{return new Function('s','with(s){return ('+expr+')}')(scope)}catch(e){return undefined}};
+  // WXML expressions repeat for every pin on every frame. Compile each one
+  // once; the current scope still supplies all live camera and selection data.
+  const expressionCache=new Map();
+  const evaluate=(expr,scope)=>{try{if(!expressionCache.has(expr))expressionCache.set(expr,new Function('s','with(s){return ('+expr+')}'));return expressionCache.get(expr)(scope)}catch(e){return undefined}};
   const interpolate=(value,scope)=>value.replace(/\{\{([\s\S]*?)\}\}/g,(_,expr)=>{const v=evaluate(expr,scope);return v==null?'':String(v)});
   const truth=(value,scope)=>!!evaluate(value.replace(/^\{\{|\}\}$/g,''),scope);
   function children(source,target,scope){let previous=false;for(const child of source.childNodes){if(child.nodeType===1){const iff=child.getAttribute('wx:if'),otherwise=child.hasAttribute('wx:else');if(iff!==null){previous=truth(iff,scope);if(!previous)continue}else if(otherwise){if(previous)continue}else previous=false;}const el=build(child,scope);if(el)target.append(el)}}

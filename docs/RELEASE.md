@@ -1,6 +1,6 @@
-# 0.1.0-beta.1 发布检查
+# 0.1.0-beta.2 发布检查
 
-2026-10-03。仓库：[DanieeHan/unnc-pocket-map](https://github.com/DanieeHan/unnc-pocket-map)。测试版和附件见 [GitHub Releases](https://github.com/DanieeHan/unnc-pocket-map/releases)。
+2026-10-05。仓库：[DanieeHan/unnc-pocket-map](https://github.com/DanieeHan/unnc-pocket-map)。测试版和附件见 [GitHub Releases](https://github.com/DanieeHan/unnc-pocket-map/releases)。
 
 ## 公开内容
 
@@ -11,12 +11,19 @@
 
 ## 验证
 
-- 本地 Node.js v24.16.0：`npm test` 六组通过，覆盖逻辑、动画、定位、发布包、微信模块加载和名称布局。GitHub Actions 使用 Node.js 22；远端结果见仓库 Actions。
+- 本地 Node.js v24.16.0：`npm test` 七组通过，覆盖逻辑、动画、定位、发布包、微信模块加载、名称布局和渲染缓存/数据量。GitHub Actions 使用 Node.js 22；远端结果见仓库 Actions。
 - 发布检查覆盖示例 AppID、空校准配置、采集路由排除、私人文件及真实 AppID/本机路径扫描、素材清单、截图格式和本地 Markdown 链接。
 - 浏览器预览验证搜索、分类、收藏持久化、楼栋服务菜单、空白关闭、拖动、缩放及待校准提示。公开首页截图位于 `images/preview-home.png`。
 - 修复微信白屏：校准 JSON 同步为 JS 模块，页面加载 JS。开发版已在微信开发者工具 Stable 2.02.2608070 / 基础库 3.17.3 重新编译，首页恢复显示。
 - 3G 标点直接显示 `3G`；右侧运动场名为 Pitch。名称字体 10px，先尝试下方，再尝试其他方向；3/4/5 使用带编号的中文名称。浏览器确认这三栋名称在标点下方，自动测试覆盖中心、边缘、不同视口及碰撞避让。
 - ZIP 经完整性和逐文件核对，并在独立临时目录解压运行 `npm test`。
+
+## 本次改进与验收
+
+- 缓存地点索引、服务数量、排序和名称宽度；精简动画标记字段并保留每帧碰撞避让。1,440 帧本地对比几何一致，平均标记传输量下降约 62%；不代表手机帧率。
+- 浏览器预览缓存 WXML 表达式，详情及复制文本增加位置参考和入口确认提示。演示方式见 [DEMO.md](DEMO.md)。
+- 修复地点行只占左侧，明确列表容器和行的完整宽度。开发版在微信开发者工具模拟器确认右侧箭头、分隔线及长名称；浏览器 320/390/430 px 检查没有横向溢出。
+- 新测试版使用独立标签和 ZIP；旧版 `v0.1.0-beta.1` 标签与附件保留原内容。
 
 ## 使用边界
 

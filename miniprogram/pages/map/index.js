@@ -2,6 +2,32 @@ const {categories,places,officialMap,searchPlaces,mapPlaces} = require('../../da
 const STORAGE_KEY = 'unnc.saved.v1';
 const calibration = require('../../data/location-calibration');
 const location = require('../../utils/location');
+// Place content is static. Prepare it once instead of scanning every child and
+// sorting every visible building on each animation or touch frame.
+const placesById=new Map(places.map(p=>[p.id,p]));
+const childrenByParent=new Map();
+for(const p of places)if(p.parentId){
+  if(!childrenByParent.has(p.parentId))childrenByParent.set(p.parentId,[]);
+  childrenByParent.get(p.parentId).push(p);
+}
+const markerCache=new WeakMap(),layoutCache=new WeakMap();
+function markerData(p){
+  if(markerCache.has(p))return markerCache.get(p);
+  let units=0;for(const ch of p.mapLabel)units+=/[\x00-\x7f]/.test(ch)?5.5:10;
+  // Only properties consumed by the map view cross the setData bridge. Full
+  // names, descriptions and search aliases stay in the results/detail records.
+  const marker={id:p.id,x:p.x,y:p.y,category:p.category,code:p.code,
+    markerText:p.markerText||'',mapLabel:p.mapLabel,hasChildren:!!p.hasChildren,
+    serviceCount:(childrenByParent.get(p.id)||[]).length,labelWidth:Math.min(140,Math.ceil(units)+10)};
+  const rank=p.hasChildren?0:p.major?1:p.category==='study'?2:p.category==='life'?3:p.category==='residence'?5:4;
+  const prepared={marker,rank};markerCache.set(p,prepared);return prepared;
+}
+function mapLayout(list){
+  if(layoutCache.has(list))return layoutCache.get(list);
+  const prepared=list.map(markerData).sort((a,b)=>a.rank-b.rank||a.marker.id.localeCompare(b.marker.id));
+  const layout={ordered:prepared.map(p=>p.marker),byId:new Map(prepared.map(p=>[p.marker.id,p.marker]))};
+  layoutCache.set(list,layout);return layout;
+}
 Page({
   data: {expandedBuildingId:null,mapServicePopup:null,popupItems:[],categories,places,visiblePlaces:mapPlaces(places,'all',null),results:places,category:'all',query:'',tab:'map',selected:null,related:[],saved:[],isSaved:false,guide:false,searching:false,scale:0.65,mapWidth:600,mapHeight:579,mapX:0,mapY:0,mapAnimate:false,showMapLabels:false,statusTop:24,windowHeight:800,featured:places[0]},
   onLoad(options) {
@@ -9,7 +35,7 @@ Page({
     this.setData({locating:false,userLocation:null,userLocationScreen:null,locationMessage:''});
     const info = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync();
     this.viewportWidth = info.windowWidth;this.cameraTicket=0;
-    try { const stored=wx.getStorageSync(STORAGE_KEY); this.data.saved=Array.isArray(stored)?stored.filter(id=>places.some(p=>p.id===id)):[]; } catch(e) { this.data.saved=[]; }
+    try { const stored=wx.getStorageSync(STORAGE_KEY); this.data.saved=Array.isArray(stored)?stored.filter(id=>placesById.has(id)):[]; } catch(e) { this.data.saved=[]; }
     this.setData({saved:this.data.saved,statusTop:info.statusBarHeight||24,windowHeight:info.windowHeight});
     this.resetMap();
     if (options && options.place) this.selectId(options.place);
@@ -17,8 +43,9 @@ Page({
   },
   updateResults() {
     const {query,category,tab,saved}=this.data;
-    const results=searchPlaces(query,category,tab==='saved'?saved:null);
-    this.setData({results,visiblePlaces:mapPlaces(searchPlaces(query,category),category,this.data.selected)});
+    const matches=searchPlaces(query,category);
+    const results=tab==='saved'?matches.filter(p=>saved.includes(p.id)):matches;
+    this.setData({results,visiblePlaces:mapPlaces(matches,category,this.data.selected)});
     this.setCamera({});
   },
   setCamera(patch){
@@ -93,6 +120,7 @@ Page({
   },
   paintCamera(patch){
     const d={...this.data,...patch},rect=this.mapRect;
+    const layout=mapLayout(d.visiblePlaces);
     const serviceCards=[];
     const renderedPlaces=[],occupied=[];
     const hit=(a,b)=>a.x<b.x+b.w+5&&a.x+a.w+5>b.x&&a.y<b.y+b.h+5&&a.y+a.h+5>b.y;
@@ -101,9 +129,7 @@ Page({
     const size=Math.max(16,Math.min(22,Math.round(26*d.scale)));
     const bounds=(p,s)=>{const a=point(p);return {x:a.x-s/2,y:a.y-s/2-(p.hasChildren?6:0),w:s+(p.hasChildren?6:0),h:s+(p.hasChildren?6:0)};};
     const labelBoxes=(p,s,belowOnly=false)=>{
-      const a=point(p);let units=0;
-      for(const ch of p.mapLabel)units+=/[\x00-\x7f]/.test(ch)?5.5:10;
-      const w=Math.min(140,Math.ceil(units)+10),h=20,gap=6;
+      const a=point(p),w=p.labelWidth,h=20,gap=6;
       const x=Math.max(4,Math.min(a.x-w/2,(rect?rect.width:390)-w-4));
       // Keep the name below its pin; small horizontal offsets clear diagonal rows.
       const clamp=left=>Math.max(4,Math.min(left,(rect?rect.width:390)-w-4));
@@ -129,7 +155,7 @@ Page({
       occupied.push({x:0,y:0,w:158,h:44},{x:rect.width-54,y:0,w:54,h:62},{x:rect.width-56,y:rect.height-196,w:56,h:196});
       if(d.locationMessage)occupied.push({x:0,y:rect.height-64,w:rect.width-65,h:42});
       if(d.userLocation){const a=point(d.userLocation);occupied.push({x:a.x-14,y:a.y-14,w:28,h:28});}
-      const chosen=d.visiblePlaces.find(p=>p.id===(d.expandedBuildingId||(d.selected&&d.selected.id)));
+      const chosen=layout.byId.get(d.expandedBuildingId||(d.selected&&d.selected.id));
       if(chosen){occupied.push(bounds(chosen,28));const a=point(chosen);const marker={...chosen,screenX:a.x,screenY:a.y,pinSize:28,labelVisible:false};renderedPlaces.push(marker);if(!d.expandedBuildingId)placeLabel(marker);}
       if(d.expandedBuildingId&&chosen){
         const a=point(chosen),gap=28;
@@ -150,10 +176,7 @@ Page({
         occupied.push({x:left,y:top,w:width,h:height});
       }
       for(let i=serviceCards.length-1;i>=0;i--){const c=serviceCards[i],box={x:c.left,y:c.top,w:c.width,h:70};if(!fits(box)||occupied.some(b=>hit(box,b)))serviceCards.splice(i,1);else occupied.push(box);}
-      const rank=p=>p.hasChildren?0:p.major?1:p.category==='study'?2:p.category==='life'?3:p.category==='residence'?5:4;
-      const sorted=d.visiblePlaces.filter(p=>!chosen||p.id!==chosen.id).slice().sort((a,b)=>rank(a)-rank(b)||a.id.localeCompare(b.id));
-      for(const p of sorted){const pinSize=p.markerText?Math.max(24,size):size;const b=bounds(p,pinSize);if(!fits(b)||occupied.some(o=>hit(b,o)))continue;occupied.push(b);const a=point(p);renderedPlaces.push({...p,screenX:a.x,screenY:a.y,pinSize,labelVisible:false,labelTop:pinSize+6});}
-      for(const p of renderedPlaces)p.serviceCount=places.filter(child=>child.parentId===p.id).length;
+      for(const p of layout.ordered){if(chosen&&p.id===chosen.id)continue;const pinSize=p.markerText?Math.max(24,size):size;const b=bounds(p,pinSize);if(!fits(b)||occupied.some(o=>hit(b,o)))continue;occupied.push(b);const a=point(p);renderedPlaces.push({...p,screenX:a.x,screenY:a.y,pinSize,labelVisible:false,labelTop:pinSize+6});}
       // Arrange all names below first, before allowing fallback directions.
       const distance=p=>(p.screenX-rect.width/2)**2+(p.screenY-rect.height/2)**2;
       const labels=renderedPlaces.filter(p=>!p.labelVisible&&p.id!==d.expandedBuildingId&&d.scale>=1.15&&p.category!=='residence')
@@ -173,17 +196,17 @@ Page({
   selectPlace(e) {this.selectId(e.currentTarget.dataset.id);},
   selectMapPlace(e) {
     if(Date.now()<(this.suppressTapUntil||0))return;
-    const id=e.currentTarget.dataset.id,items=places.filter(p=>p.parentId===id);
+    const id=e.currentTarget.dataset.id,items=childrenByParent.get(id)||[];
     if(!items.length){this.selectPlace(e);return;}
     if(this.data.expandedBuildingId===id){this.closeMapServices();return;}
-    const p=places.find(p=>p.id===id),ticket=++this.cameraTicket;
+    const p=placesById.get(id),ticket=++this.cameraTicket;
     this.setData({expandedBuildingId:id,mapServicePopup:null,popupItems:items,popupBuilding:p,selected:null,related:[]});
     this.afterMapLayout(rect=>{if(ticket===this.cameraTicket&&this.data.expandedBuildingId===id)this.centerPlace(p,rect);});
   },
   closeMapServices(){++this.cameraTicket;this.setData({expandedBuildingId:null,mapServicePopup:null});this.setCamera({});},
   selectId(id) {
-    const p=places.find(p=>p.id===id);if(!p)return;
-    this.setData({selected:p,expandedBuildingId:null,mapServicePopup:null,isSaved:this.data.saved.includes(id),searching:false,tab:'map',query:'',category:'all',visiblePlaces:mapPlaces(places,'all',p),related:places.filter(c=>c.parentId===p.id)});
+    const p=placesById.get(id);if(!p)return;
+    this.setData({selected:p,expandedBuildingId:null,mapServicePopup:null,isSaved:this.data.saved.includes(id),searching:false,tab:'map',query:'',category:'all',visiblePlaces:mapPlaces(places,'all',p),related:childrenByParent.get(p.id)||[]});
     this.updateResults();
     const ticket=++this.cameraTicket;
     this.afterMapLayout(rect=>{if(ticket===this.cameraTicket)this.centerPlace(p,rect);});
@@ -272,12 +295,12 @@ Page({
     else this.gesture=null;
     if(moved)this.setCamera({showMapLabels:this.data.scale>=1.15});
   },
-  onResize(e){this.viewportWidth=e.size.windowWidth;this.setData({windowHeight:e.size.windowHeight});const p=this.data.expandedBuildingId?places.find(p=>p.id===this.data.expandedBuildingId):this.data.selected;if(p){const ticket=++this.cameraTicket;this.afterMapLayout(r=>{if(ticket===this.cameraTicket)this.centerPlace(p,r);});}else this.resetMap();},
+  onResize(e){this.viewportWidth=e.size.windowWidth;this.setData({windowHeight:e.size.windowHeight});const p=this.data.expandedBuildingId?placesById.get(this.data.expandedBuildingId):this.data.selected;if(p){const ticket=++this.cameraTicket;this.afterMapLayout(r=>{if(ticket===this.cameraTicket)this.centerPlace(p,r);});}else this.resetMap();},
   openGuide(){this.setData({guide:true});},
   closeGuide(){this.setData({guide:false});},
   stop(){},
   copyAddress(){wx.setClipboardData({data:'宁波市鄞州区泰康东路199号 · 宁波诺丁汉大学'});},
   copyOfficial(){wx.setClipboardData({data:officialMap});},
-  copyPlace(){const p=this.data.selected;if(p)wx.setClipboardData({data:`${p.name} · ${p.en}\n宁波诺丁汉大学，泰康东路199号\n请以官方地图及现场标识确认实际位置。`});},
+  copyPlace(){const p=this.data.selected;if(p)wx.setClipboardData({data:`${p.name} · ${p.en}\n${p.locationHint?p.locationHint+'\n':''}${p.parentId?'楼栋/区域参考，入口请现场确认':'图面位置参考，入口请现场确认'}\n宁波诺丁汉大学，泰康东路199号\n请以官方地图及现场标识确认实际位置。`});},
   onShareAppMessage(){const p=this.data.selected;return {title:p?`一起探索宁诺 · ${p.name}`:'宁诺口袋地图 · 发现校园的小美好',path:'/pages/map/index'+(p?'?place='+p.id:'')};}
 });

@@ -4,9 +4,9 @@
 
 An independently developed **native WeChat Mini Program with a 2D campus map**, using place information from the University of Nottingham Ningbo China (UNNC) to explore campus buildings and nearby services.
 
-**Current version: `0.1.0-beta.1`. An independent project, currently in beta.**
+**Current version: `0.1.0-beta.2`. An independent project, currently in beta.**
 
-As of October 3, 2026, the public code, automated tests and browser preview checks are complete. Download the beta from [GitHub Releases](https://github.com/DanieeHan/unnc-pocket-map/releases). Testing on physical devices in WeChat is still pending.
+The October 5, 2026 beta includes map rendering optimizations, location reference notes and a full-width place list fix. Download the beta from [GitHub Releases](https://github.com/DanieeHan/unnc-pocket-map/releases). Testing on physical devices in WeChat is still pending.
 
 > This open-source package includes an original placeholder grid, **not the actual campus map artwork**. You can try the code and interactions immediately. To recreate the campus map, import artwork you have permission to use and align it with the place coordinates. Real location support has not been calibrated and is disabled by default.
 
@@ -15,7 +15,7 @@ As of October 3, 2026, the public code, automated tests and browser preview chec
 ## Features
 
 - 66 place records: 48 buildings, facilities and service locations, plus 18 additional services transcribed from commercial street photos.
-- Category filters; search by Chinese or English name, abbreviation or building number; place descriptions, copying and WeChat sharing.
+- Category filters; search by Chinese or English name, abbreviation or building number; place descriptions, copying and WeChat sharing. Details and copied text retain building/area references and entrance-confirmation notes.
 - Favorites stored on the current device, with no account, cloud database or backend service.
 - Markers and labels avoid overlapping in screen space. Dormitories use short building numbers; buildings with a service count can expand a service list.
 - Tap a place to center it; drag and pinch to zoom. Camera and zoom transitions take approximately 260 ms, and dragging interrupts animation.
@@ -49,7 +49,7 @@ Use Node.js 22 or later. No `npm install` is needed:
 npm test
 ```
 
-The six test suites cover search and data, favorites, zoom limits, centering, gesture handling, menus, animation interruption, dismissal, coordinate fitting, failed and stale location callbacks, collection and saving, release package checks, WeChat JS module loading, calibration configuration consistency and label placement. Location tests use synthetic data and **do not replace field calibration**.
+The seven test suites cover search and data, favorites, zoom limits, centering, gesture handling, menus, animation interruption, dismissal, coordinate fitting, failed and stale location callbacks, collection and saving, release package checks, WeChat JS module loading, calibration configuration consistency, label placement, and map rendering cache/payload regressions. Location tests use synthetic data and **do not replace field calibration**.
 
 ## Data and limitations
 
@@ -82,3 +82,7 @@ Issues and improvements are welcome. Read the [contributing guide](CONTRIBUTING.
 The code, original documentation and placeholder grid are licensed under the [MIT License](LICENSE). See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for the sources and rights of map information and third-party names, the [release checklist](docs/RELEASE.md) for publication checks, and [CHANGELOG.md](CHANGELOG.md) for version history. These supporting documents are currently in Chinese.
 
 This project is not affiliated with or endorsed by the University of Nottingham Ningbo China.
+
+## Project demo
+
+See the [demo guide](docs/DEMO.md) (Chinese) for a two-minute walkthrough, local preview commands and implementation notes.
